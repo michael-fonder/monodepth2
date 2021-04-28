@@ -12,6 +12,7 @@ from utils import readlines
 from options import MonodepthOptions
 import datasets
 import networks
+from PIL import Image
 
 cv2.setNumThreads(0)  # This speeds up evaluation 5x on our unix systems (OpenCV 3.3.1)
 
@@ -21,7 +22,7 @@ splits_dir = os.path.join(os.path.dirname(__file__), "splits")
 # Models which were trained with stereo supervision were trained with a nominal
 # baseline of 0.1 units. The KITTI rig has a baseline of 54cm. Therefore,
 # to convert our stereo predictions to real-world scale we multiply our depths by 5.4.
-STEREO_SCALE_FACTOR = 5.4
+STEREO_SCALE_FACTOR =10
 
 
 def compute_errors(gt, pred):
@@ -80,7 +81,7 @@ def evaluate(opt):
 
         encoder_dict = torch.load(encoder_path)
 
-        dataset = datasets.KITTIRAWDataset(opt.data_path, filenames,
+        dataset = datasets.MidAirDataset(opt.data_path, filenames,
                                            encoder_dict['height'], encoder_dict['width'],
                                            [0], 4, is_train=False)
         dataloader = DataLoader(dataset, 16, shuffle=False, num_workers=opt.num_workers,
@@ -102,10 +103,11 @@ def evaluate(opt):
 
         print("-> Computing predictions with size {}x{}".format(
             encoder_dict['width'], encoder_dict['height']))
-
+        depth_gt = []
         with torch.no_grad():
             for data in dataloader:
                 input_color = data[("color", 0, 0)].cuda()
+                depth_gt.append(data["depth_gt"][:,0].detach().numpy())
 
                 if opt.post_process:
                     # Post-processed results require each image to have two forward passes
@@ -123,7 +125,7 @@ def evaluate(opt):
                 pred_disps.append(pred_disp)
 
         pred_disps = np.concatenate(pred_disps)
-
+        depth_gt = np.concatenate(depth_gt)
     else:
         # Load predictions from file
         print("-> Loading predictions from {}".format(opt.ext_disp_to_eval))
@@ -162,8 +164,10 @@ def evaluate(opt):
         print("-> No ground truth is available for the KITTI benchmark, so not evaluating. Done.")
         quit()
 
-    gt_path = os.path.join(splits_dir, opt.eval_split, "gt_depths.npz")
-    gt_depths = np.load(gt_path, fix_imports=True, encoding='latin1')["data"]
+    # gt_path = os.path.join(splits_dir, opt.eval_split, "gt_depths.npz")
+    # gt_depths = np.load(gt_path, fix_imports=True, encoding='latin1')["data"]
+
+    gt_depths = depth_gt
 
     print("-> Evaluating")
 
@@ -179,13 +183,31 @@ def evaluate(opt):
     ratios = []
 
     for i in range(pred_disps.shape[0]):
-
         gt_depth = gt_depths[i]
         gt_height, gt_width = gt_depth.shape[:2]
 
         pred_disp = pred_disps[i]
         pred_disp = cv2.resize(pred_disp, (gt_width, gt_height))
         pred_depth = 1 / pred_disp
+
+        def save_maps(gt, est, id):
+            ratio = np.median(gt) / np.median(est)
+            def save_depth(map, path):
+                map = np.clip(map, np.exp(0.), 80.)
+                I8_content = (np.log(map) * 255.0 / np.log(80.)).astype(np.uint8)
+                img_tmp = Image.fromarray(np.stack((I8_content, I8_content, I8_content), axis=2))
+                img_tmp.save(path)
+
+            save_dir = os.path.join(opt.log_dir, "saved_maps")
+            print(gt.shape)
+            os.makedirs(save_dir, exist_ok=True)
+            filename_gt = os.path.join(save_dir, str(id).zfill(6) + "_gt.png")
+            save_depth(gt, filename_gt)
+            filename_est = os.path.join(save_dir, str(id).zfill(6) + "_est.png")
+            save_depth(est*ratio, filename_est)
+
+        if opt.export_pics:
+            save_maps(gt_depth, pred_depth, i)
 
         if opt.eval_split == "eigen":
             mask = np.logical_and(gt_depth > MIN_DEPTH, gt_depth < MAX_DEPTH)
@@ -212,6 +234,8 @@ def evaluate(opt):
         pred_depth[pred_depth > MAX_DEPTH] = MAX_DEPTH
 
         errors.append(compute_errors(gt_depth, pred_depth))
+
+
 
     if not opt.disable_median_scaling:
         ratios = np.array(ratios)

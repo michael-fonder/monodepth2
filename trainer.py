@@ -112,7 +112,8 @@ class Trainer:
 
         # data
         datasets_dict = {"kitti": datasets.KITTIRAWDataset,
-                         "kitti_odom": datasets.KITTIOdomDataset}
+                         "kitti_odom": datasets.KITTIOdomDataset,
+                         "midair": datasets.MidAirDataset}
         self.dataset = datasets_dict[self.opt.dataset]
 
         fpath = os.path.join(os.path.dirname(__file__), "splits", self.opt.split, "{}_files.txt")
@@ -501,13 +502,13 @@ class Trainer:
         This isn't particularly accurate as it averages over the entire batch,
         so is only used to give an indication of validation performance
         """
-        depth_pred = outputs[("depth", 0, 0)]
-        depth_pred = torch.clamp(F.interpolate(
-            depth_pred, [375, 1242], mode="bilinear", align_corners=False), 1e-3, 80)
-        depth_pred = depth_pred.detach()
-
         depth_gt = inputs["depth_gt"]
         mask = depth_gt > 0
+
+        depth_pred = outputs[("depth", 0, 0)]
+        depth_pred = torch.clamp(F.interpolate(
+            depth_pred, depth_gt.size()[2:], mode="bilinear", align_corners=False), 1e-3, 80)
+        depth_pred = depth_pred.detach()
 
         # garg/eigen crop
         crop_mask = torch.zeros_like(mask)
