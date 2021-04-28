@@ -1,6 +1,6 @@
-# Monodepth2
+# Monodepth2 + Mid-Air dataloader
 
-This is the reference PyTorch implementation for training and testing depth estimation models using the method described in
+This is an adaptation of the reference PyTorch implementation for training and testing depth estimation models on the [Mid-Air dataset](https://midair.ulg.ac.be/) using the method described in
 
 > **Digging into Self-Supervised Monocular Depth Prediction**
 >
@@ -9,12 +9,38 @@ This is the reference PyTorch implementation for training and testing depth esti
 > [ICCV 2019 (arXiv pdf)](https://arxiv.org/abs/1806.01260)
 
 <p align="center">
-  <img src="assets/teaser.gif" alt="example input output gif" width="600" />
+  <tr>
+    <td> <img src="assets/img/01_col.PNG"  alt="1" width = 128px height = 128px ></td>
+    <td> <img src="assets/img/02_col.PNG"  alt="1" width = 128px height = 128px ></td>
+    <td> <img src="assets/img/03_col.PNG"  alt="1" width = 128px height = 128px ></td>
+    <td> <img src="assets/img/04_col.PNG"  alt="1" width = 128px height = 128px ></td>
+    <td> <img src="assets/img/05_col.PNG"  alt="1" width = 128px height = 128px ></td>
+    <td> <img src="assets/img/06_col.PNG"  alt="1" width = 128px height = 128px ></td>
+   </tr> 
+  <br>
+  <tr>
+    <td> <img src="assets/img/01_gt.PNG"  alt="1" width = 128px height = 128px ></td>
+    <td> <img src="assets/img/02_gt.PNG"  alt="1" width = 128px height = 128px ></td>
+    <td> <img src="assets/img/03_gt.PNG"  alt="1" width = 128px height = 128px ></td>
+    <td> <img src="assets/img/04_gt.PNG"  alt="1" width = 128px height = 128px ></td>
+    <td> <img src="assets/img/05_gt.PNG"  alt="1" width = 128px height = 128px ></td>
+    <td> <img src="assets/img/06_gt.PNG"  alt="1" width = 128px height = 128px ></td>
+   </tr>
+  <br>
+  <tr>
+    <td> <img src="assets/img/01-m2.png"  alt="1" width = 128px height = 128px ></td>
+    <td> <img src="assets/img/02-m2.png"  alt="1" width = 128px height = 128px ></td>
+    <td> <img src="assets/img/03-m2.png"  alt="1" width = 128px height = 128px ></td>
+    <td> <img src="assets/img/04-m2.png"  alt="1" width = 128px height = 128px ></td>
+    <td> <img src="assets/img/05-m2.png"  alt="1" width = 128px height = 128px ></td>
+    <td> <img src="assets/img/06-m2.png"  alt="1" width = 128px height = 128px ></td>
+   </tr>
+  <br>
 </p>
 
 This code is for non-commercial use; please see the [license file](LICENSE) for terms.
 
-If you find our work useful in your research please consider citing our paper:
+If you find the work of the authors useful in your research please consider citing their paper:
 
 ```
 @article{monodepth2,
@@ -27,6 +53,18 @@ If you find our work useful in your research please consider citing our paper:
   month = {October},
 year = {2019}
 }
+```
+
+If you use the [Mid-Air dataset](https://midair.ulg.ac.be/), please consider citing the related paper:
+
+```
+@INPROCEEDINGS{Fonder2019MidAir,
+author = {Michael Fonder and Marc Van Droogenbroeck},
+title = {Mid-Air: A multi-modal dataset for extremely low altitude drone flights},
+booktitle = {Conference on Computer Vision and Pattern Recognition Workshop (CVPRW)},
+year = {2019},
+month = {June}
+} 
 ```
 
 
